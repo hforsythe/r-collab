@@ -6,5 +6,49 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE)
+library(readxl)
+library(tidyverse)
+library(here)
+library(janitor)
+library(paletteer)
+
 ```
+Read in the noaa_landings.csv: 
+
+```{r}
+us_landing <- read_csv(here("data","noaa_landings.csv"),
+                       na = "no data")
+
+```
+Now let's clean up the column names:
+```{r}
+salmon_clean <- us_landing %>% 
+  clean_names() %>% 
+  mutate(`afs_name` = str_to_lower(`afs_name`)) %>% 
+  mutate(dollars_num = parse_number(dollars_usd)) %>% 
+  filter(str_detect(afs_name, pattern = "salmon")) %>% 
+  separate(afs_name, into = c("salmon_group", "subgroup"), sep = ", ") %>% 
+  drop_na(dollars_num)
+```
+### Annual total value by salmon subgroup
+
+```{r}
+salmon_us_annual <- salmon_clean %>% 
+  group_by(year, subgroup) %>% 
+  summarise(tot_value = sum (dollars_num))
+```
+
+
+```{r}
+ggplot(data = salmon_us_annual, 
+       aes( x = year, y = tot_value)) + 
+  geom_line(aes(color = subgroup)) +
+  theme_bw()+
+  labs(x = "Year", y = "US commercial salmon value (USD)", 
+       title = ("FISHY")) +
+  scale_colour_paletteer_d("awtools::mpalette")
+```
+dutchmasters	pearl_earring	11	qualitativ
+
+
